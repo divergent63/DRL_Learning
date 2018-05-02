@@ -261,7 +261,8 @@ if __name__ == '__main__':
                 print('last_time_steps:\n', ep_score)
                 print("episode: {}/{}, score: {}".format(i_episode, MAX_EP, time))
                 score_his.append(time)
-
+                
+                time = 0
                 break
 
             observation = observation_
