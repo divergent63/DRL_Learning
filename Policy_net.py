@@ -111,7 +111,7 @@ def learn(PGNN, ep_obs, ep_as, ep_rs):
     discounted_ep_rs_norm = np.reshape(discounted_ep_rs_norm, (len(discounted_ep_rs_norm), 1))
     print('--', np.shape(ep_as), np.shape(ep_rs), np.shape(discounted_ep_rs_norm))
 
-    # advantages
+    # advantages = discounted_ep_rs_norm
     fake_labels = ep_as * discounted_ep_rs_norm
 
     '''
@@ -142,15 +142,15 @@ def pgnn_init(env, PG, load):
 
 
 if __name__ == '__main__':
-    # RENDER = False  # 在屏幕上显示模拟窗口会拖慢运行速度, 我们等计算机学得差不多了再显示模拟
-    # DISPLAY_REWARD_THRESHOLD = 400  # 当 回合总 reward 大于 400 时显示模拟窗口
-    MAX_EP = 5000
-    MAX_T = 2000
+    RENDER = False  # 在屏幕上显示模拟窗口会拖慢运行速度, 我们等计算机学得差不多了再显示模拟
+    DISPLAY_REWARD_THRESHOLD = 400  # 当 回合总 reward 大于 400 时显示模拟窗口
+    MAX_EP = 2000
+    MAX_T = 500
 
-    env = gym.make('CartPole-v0')  # CartPole 这个模拟
+    env = gym.make('CartPole-v0')  # CartPole env
     env = env.unwrapped  # 取消限制
 
-    # very important parameter
+    # very important parameter, performence depend on the value of seed indeed
     env.seed(1)  # 普通的 Policy gradient 方法, 使得回合的 variance 比较大, 所以我们选了一个好点的随机种子
 
     goal_average_steps = 300
@@ -203,8 +203,8 @@ if __name__ == '__main__':
         while True:
         # for time in range(MAX_T):
             time += 1
-            ## if RENDER: env.render()
-            env.render()
+            if RENDER: env.render()
+            # env.render()
             # print('np.shape(ep_obs):  ', np.shape(ep_obs))
 
             #######################################################################
@@ -227,7 +227,7 @@ if __name__ == '__main__':
                     running_reward = ep_rs_sum
                 else:
                     running_reward = running_reward * 0.99 + ep_rs_sum * 0.01
-                ## if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True     # 判断是否显示模拟
+                if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True     # 判断是否显示模拟
                 print("episode:", i_episode, "  reward:", int(running_reward))
                 rs_his.append([running_reward])
 
@@ -235,9 +235,6 @@ if __name__ == '__main__':
                     print('running_best: ', running_best)
                     print('running_reward: ', running_reward)
                     running_best = running_reward
-
-                    # PGNN.save_weights('./model/best_try_PG_' + str(ver) + '.h5')
-                    # print('model saved!')
 
                 ep_obs = np.array(ep_obs).astype('float64')
                 # x = ep_obs[:-1, :]
@@ -260,7 +257,7 @@ if __name__ == '__main__':
 
                 #######################################################################
 
-                ep_score = np.hstack((ep_score[1:], [time]))  # 更新最近10场游戏的得分stack
+                ep_score = np.hstack((ep_score[1:], [time]))  # 更新最近几场游戏的得分stack
                 print('last_time_steps:\n', ep_score)
                 print("episode: {}/{}, score: {}".format(i_episode, MAX_EP, time))
                 score_his.append(time)
@@ -271,7 +268,7 @@ if __name__ == '__main__':
 
         if (ep_score.mean() >= goal_average_steps):
             #######################################################################
-            # PGNN.save('./model/pgnn_' + str(ver) + '.h5')
+            PGNN.save('./model/pgnn_' + str(ver) + '.h5')
             #######################################################################
 
             print('model saved!')
@@ -280,7 +277,8 @@ if __name__ == '__main__':
             print('model save jumped!')
             # break
 
-    # np.savetxt('./info/pg_rs_his_best_try_' + str(ver) + '.csv', rs_his)
-    # np.savetxt('./info/pg_score_his_best_try_' + str(ver) + '.csv', score_his)
+    # save the rewards and time step scores to backup
+    np.savetxt('./info/pg_rs_his_best_try_' + str(ver) + '.csv', rs_his)
+    np.savetxt('./info/pg_score_his_best_try_' + str(ver) + '.csv', score_his)
 
     # print(rs_his)
